@@ -26,7 +26,7 @@ async def send_welcome(message: types.Message):
 @dp.message()
 async def echo(message: types.Message):
     # Отправляем сообщение пользователя в ChatGPT
-    response = ask(message.text)
+    response = await ask(message.text)
 
     # Отправляем ответ пользователю
     await message.answer(response)

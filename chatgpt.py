@@ -4,6 +4,7 @@ import pandas as pd
 import os
 import tiktoken
 import ast
+import asyncio
 from scipy import spatial
 
 load_dotenv('key.env')  # Загружает переменные из .env
@@ -27,7 +28,7 @@ df['embedding'] = df['embedding'].apply(ast.literal_eval)
 EMBEDDING_MODEL = "text-embedding-ada-002"
 
 # Функция поиска
-def strings_ranked_by_relatedness(   
+async def strings_ranked_by_relatedness(   
     query: str, # пользовательский запрос
     df: pd.DataFrame, # DataFrame со столбцами text и embedding (база знаний)
     relatedness_fn=lambda x, y: 1 - spatial.distance.cosine(x, y), # функция схожести, косинусное расстояние
@@ -67,14 +68,14 @@ def num_tokens(text: str, model: str = GPT_MODEL) -> int:
     return len(encoding.encode(text))
 
 # Функция формирования запроса к chatGPT по пользовательскому вопросу и базе знаний
-def query_message(
+async def query_message(
     query: str, # пользовательский запрос
     df: pd.DataFrame, # DataFrame со столбцами text и embedding (база знаний)
     model: str, # модель
     token_budget: int # ограничение на число отсылаемых токенов в модель
 ) -> str:
     """Возвращает сообщение для GPT с соответствующими исходными текстами, извлеченными из фрейма данных (базы знаний)."""
-    strings, relatednesses = strings_ranked_by_relatedness(query, df) # функция ранжирования базы знаний по пользовательскому запросу
+    strings, relatednesses = await strings_ranked_by_relatedness(query, df) # функция ранжирования базы знаний по пользовательскому запросу
     # Шаблон инструкции для chatGPT
     message = 'Use the below articles on the Russia to answer the subsequent question. If the answer cannot be found in the articles, write "I could not find an answer."'
     # Шаблон для вопроса
@@ -90,7 +91,7 @@ def query_message(
     return message + question
 
 
-def ask(
+async def ask(
     query: str, # пользовательский запрос
     df: pd.DataFrame = df, # DataFrame со столбцами text и embedding (база знаний)
     model: str = GPT_MODEL, # модель
@@ -99,7 +100,7 @@ def ask(
 ) -> str:
     """Отвечает на вопрос, используя GPT и базу знаний."""
     # Формируем сообщение к chatGPT (функция выше)
-    message = query_message(query, df, model=model, token_budget=token_budget)
+    message = await query_message(query, df, model=model, token_budget=token_budget)
     # Если параметр True, то выводим сообщение
     if print_message:
         print(message)
