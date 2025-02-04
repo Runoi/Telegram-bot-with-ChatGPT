@@ -3,3 +3,7 @@ key.env
 
 # Игнорировать другие конфиденциальные файлы
 *.env
+
+russian_history.csv
+
+__pycache__
